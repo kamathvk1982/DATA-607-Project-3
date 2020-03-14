@@ -1,0 +1,27 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(stringr)
+```
+
+
+```{r}
+#Loads the dataset
+df <- read.csv("https://raw.githubusercontent.com/davidblumenstiel/data/master/indeed_job_dataset.csv",stringsAsFactors = FALSE)
+
+#keywords as 'keywords'
+keywords<-unname(unlist(read.csv("https://raw.githubusercontent.com/chilleundso/DATA607/master/Project3/softskills.csv", stringsAsFactors = FALSE)))
+
+#Iniates new columns for each keyword; also makes list index list
+df[keywords] <- NA
+keywordColIndex <- seq(length(df)-length(keywords)+1,length(df),1)
+
+
+#Will determine if contains keywords; occurs (1), or doesnt occur(0)
+#Coerces multiple occurances to 1
+i = 0
+for (desc in df$Description) {
+  i = i + 1
+  df[i,keywordColIndex] <-(as.integer(str_detect(desc,fixed(keywords, ignore_case = TRUE))))
+}
+
+```
