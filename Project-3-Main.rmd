@@ -65,7 +65,7 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
 
 ## Hard Skills
 
-
+```{r}
 #Gather soft skills
 df2 <- df[,c(1, 44:ncol(df))] %>%
   gather(skill, flag, -X) %>%
