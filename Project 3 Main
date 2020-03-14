@@ -2,7 +2,7 @@
 knitr::opts_chunk$set(echo = TRUE)
 library(stringr)
 ```
-
+#Manolis test
 
 ```{r}
 #Loads the dataset
