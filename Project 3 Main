@@ -24,4 +24,7 @@ for (desc in df$Description) {
   df[i,keywordColIndex] <-(as.integer(str_detect(desc,fixed(keywords, ignore_case = TRUE))))
 }
 
+#Gets rid of the descriptions
+df$Description <- NULL
+
 ```
