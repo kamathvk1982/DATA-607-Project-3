@@ -13,7 +13,7 @@ output:
       smooth_scroll: true
       number_sections: true    
   pdf_document: default
----
+--- 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
