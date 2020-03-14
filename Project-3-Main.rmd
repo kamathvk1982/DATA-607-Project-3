@@ -1,33 +1,49 @@
+---
+title: "Data607-MajorAssignment-Project3"
+author: "Leo Yi / David Blumensteil / Manolis Manoli / Vinayak Kamath"
+date: "3/11/2020"
+output:
+  html_document:
+    highlight: pygments
+    theme: cerulean
+    toc: TRUE
+    toc_depth: 3    
+    toc_float: 
+      collapsed: true
+      smooth_scroll: true
+      number_sections: true    
+  pdf_document: default
+---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(stringr)
-
 library(knitr)
 library(tidyr)
 library(dplyr)
-
 #install.packages("wordcloud")
-library("wordcloud")
-
+#library("wordcloud")
 #install.packages("RColorBrewer")
-library("RColorBrewer")
-
+#library("RColorBrewer")
 ```
 
-#Manolis test
+### Import
 
 ```{r}
 #Loads the dataset
-df <- read.csv("https://raw.githubusercontent.com/davidblumenstiel/data/master/indeed_job_dataset.csv",stringsAsFactors = FALSE)
+df_raw <- read.csv("https://raw.githubusercontent.com/davidblumenstiel/data/master/indeed_job_dataset.csv",stringsAsFactors = FALSE)
+#Create working df object
+df <- df_raw
+```
 
+## Soft Skills
+
+```{r}
 #keywords as 'keywords'
 keywords<-unname(unlist(read.csv("https://raw.githubusercontent.com/chilleundso/DATA607/master/Project3/softskills.csv", stringsAsFactors = FALSE)))
-
 #Iniates new columns for each keyword; also makes list index list
 df[keywords] <- NA
 keywordColIndex <- seq(length(df)-length(keywords)+1,length(df),1)
-
-
 #Will determine if contains keywords; occurs (1), or doesnt occur(0)
 #Coerces multiple occurances to 1
 i = 0
@@ -35,25 +51,58 @@ for (desc in df$Description) {
   i = i + 1
   df[i,keywordColIndex] <-(as.integer(str_detect(desc,fixed(keywords, ignore_case = TRUE))))
 }
-
 #Gets rid of the descriptions
 df$Description <- NULL
+#Gather soft skills
+df2 <- df[,c(1, 44:ncol(df))] %>%
+  gather(skill, flag, -X) %>%
+  filter(flag == 1) %>%
+  select(id = X, skill) %>%
+  mutate(skill_type = 'soft')
+```
 
+## Hard Skills
+
+```{r}
+# List all hard skills and how often they were listed in a separate dataframe
+for (i in 1:nrow(df_raw)) {
+  slist <- str_extract_all(df$Skill[i], "'.+?'")
+  temp_df <- data.frame(skill = slist[[1]])
+  
+  if (nrow(temp_df) > 0) {
+    
+    temp_df$id <- i - 1
+    temp_df$skill <- as.character(temp_df$skill)
+    temp_df <- select(temp_df, id, skill)
+    
+    if (i == 1) {
+      sdf <- temp_df
+    } else {
+      sdf <- bind_rows(sdf, temp_df)
+    }
+  }
+}
+# Remove quotes and trim whitespace
+sdf$skill <- str_replace_all(sdf$skill, "'", "")
+sdf$skill <- str_replace_all(sdf$skill, '"', "")
+sdf$skill <- str_trim(sdf$skill)
+sdf$skill_type <- 'hard'
+# Combine skills
+skills <- bind_rows(df2, sdf)
 ```
 
 
-# Data Tidying/ Transformation
-```{r, warning = FALSE}
+## Job Title
 
+```{r, warning = FALSE}
+df <- df_raw
 
 job.indeed.df  <- df %>%
   select(c(Id=X, (Job_Title)))
 
-
 pattern.analyst <- c('analyst','statistician','analysis','analytics')
 pattern.engineer <- c('engineer', 'engg', 'technician','technologist','designer','architect')
 pattern.scientist <- c('scientist','doctor','dr.')
-
 pattern.junior <- c('junior','jr', 'entry','internship','jr.')
 pattern.senior <- c('senior', 'sr','experienced','sr.')
 
@@ -64,13 +113,23 @@ final.data.df <- data.frame(Id=integer(nrow(job.indeed.df)), Job_Title=character
 final.data.df$Id <-   job.indeed.df$Id
 final.data.df$Job_Title <- as.character( as.character( job.indeed.df$Job_Title) )
 
+for (i in 1: nrow(job.indeed.df)) {
+  
+  final.data.df$analyst[i] <- if(grepl(paste(pattern.analyst,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
+  final.data.df$engineer[i] <- if(grepl(paste(pattern.engineer,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
+  final.data.df$scientist[i] <- if(grepl(paste(pattern.scientist,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
+  
+  final.data.df$junior[i] <- if(grepl(paste(pattern.junior,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
+  final.data.df$senior[i] <- if(grepl(paste(pattern.senior,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
+}
 
-c.word <- c('analyst','engineer','scientist','junior','senior')
-c.count <- c(sum(final.data.df$analyst) ,sum(final.data.df$engineer), sum(final.data.df$scientist),sum(final.data.df$junior), sum(final.data.df$senior ) )
 
-set.seed(1234)
-wordcloud(words = c.word, freq = c.count, min.freq = 1,
-          max.words=10, random.order=FALSE, rot.per=0.35, 
-          colors=brewer.pal(8, "Dark2"))
+#c.word <- c('analyst','engineer','scientist','junior','senior')
+#c.count <- c(sum(final.data.df$analyst) ,sum(final.data.df$engineer), sum(final.data.df$scientist),sum(final.data.df$junior), sum(final.data.df$senior ) )
+
+#set.seed(1234)
+#wordcloud(words = c.word, freq = c.count, min.freq = 1,
+#          max.words=10, random.order=FALSE, rot.per=0.35, 
+#          colors=brewer.pal(8, "Dark2"))
 
 ```
