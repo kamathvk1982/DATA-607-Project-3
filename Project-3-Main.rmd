@@ -1,5 +1,5 @@
 ---
-title: "Data607-MajorAssignment-Project3"
+title: "Data607-Major Assignment-Project3-Most Valued Data Science Skills"
 author: "Leo Yi / David Blumensteil / Manolis Manoli / Vinayak Kamath"
 date: "3/11/2020"
 output:
@@ -36,7 +36,7 @@ df_raw <- read.csv("https://raw.githubusercontent.com/davidblumenstiel/data/mast
 df <- df_raw
 ```
 
-## Soft Skills
+### Soft Skills
 
 ```{r}
 #keywords as 'keywords'
@@ -61,7 +61,17 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
   mutate(skill_type = 'soft')
 ```
 
-## Hard Skills
+
+```{r}
+#Gather soft skills
+df2 <- df[,c(1, 44:ncol(df))] %>%
+  gather(skill, flag, -X) %>%
+  filter(flag == 1) %>%
+  select(id = X, skill) %>%
+  mutate(skill_type = 'soft')
+```
+
+### Hard Skills
 
 ```{r}
 # List all hard skills and how often they were listed in a separate dataframe
@@ -92,7 +102,7 @@ skills <- bind_rows(df2, sdf)
 ```
 
 
-## Job Title
+### Job Title
 
 ```{r, warning = FALSE}
 df <- df_raw
@@ -100,19 +110,21 @@ df <- df_raw
 job.indeed.df  <- df %>%
   select(c(Id=X, (Job_Title)))
 
+# Pattern Building:
 pattern.analyst <- c('analyst','statistician','analysis','analytics')
 pattern.engineer <- c('engineer', 'engg', 'technician','technologist','designer','architect')
 pattern.scientist <- c('scientist','doctor','dr.')
 pattern.junior <- c('junior','jr', 'entry','internship','jr.')
 pattern.senior <- c('senior', 'sr','experienced','sr.')
 
+# Intermedaite Data Frame for Titlles:
 final.data.df <- data.frame(Id=integer(nrow(job.indeed.df)), Job_Title=character(nrow(job.indeed.df))
                             , analyst=integer(nrow(job.indeed.df)) ,engineer=integer(nrow(job.indeed.df)),scientist=integer(nrow(job.indeed.df))
                             , junior=integer(nrow(job.indeed.df)),senior=integer(nrow(job.indeed.df)))
-
 final.data.df$Id <-   job.indeed.df$Id
 final.data.df$Job_Title <- as.character( as.character( job.indeed.df$Job_Title) )
 
+# Working on the counts:
 for (i in 1: nrow(job.indeed.df)) {
   
   final.data.df$analyst[i] <- if(grepl(paste(pattern.analyst,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
@@ -123,13 +135,15 @@ for (i in 1: nrow(job.indeed.df)) {
   final.data.df$senior[i] <- if(grepl(paste(pattern.senior,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
 }
 
-
 #c.word <- c('analyst','engineer','scientist','junior','senior')
 #c.count <- c(sum(final.data.df$analyst) ,sum(final.data.df$engineer), sum(final.data.df$scientist),sum(final.data.df$junior), sum(final.data.df$senior ) )
-
 #set.seed(1234)
 #wordcloud(words = c.word, freq = c.count, min.freq = 1,
 #          max.words=10, random.order=FALSE, rot.per=0.35, 
 #          colors=brewer.pal(8, "Dark2"))
+# Add job title flags to original dataframe
+
+# Merging with main Analysis Data Frame:
+df_all <- left_join(df_raw, final.data.df[,-2], by = c('X' = 'Id'))
 
 ```
