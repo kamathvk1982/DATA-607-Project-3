@@ -8,15 +8,16 @@ output:
     theme: cerulean
     toc: TRUE
     toc_depth: 3    
-    toc_float: 
+    toc_float:
       collapsed: true
       smooth_scroll: true
       number_sections: true    
   pdf_document: default
---- 
+---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 library(stringr)
 library(knitr)
 library(tidyr)
@@ -32,6 +33,7 @@ library(dplyr)
 ```{r}
 #Loads the dataset
 df_raw <- read.csv("https://raw.githubusercontent.com/davidblumenstiel/data/master/indeed_job_dataset.csv",stringsAsFactors = FALSE)
+
 #Create working df object
 df <- df_raw
 ```
@@ -73,18 +75,30 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
 
 ### Hard Skills
 
+
+#Gather soft skills
+df2 <- df[,c(1, 44:ncol(df))] %>%
+  gather(skill, flag, -X) %>%
+  filter(flag == 1) %>%
+  select(id = X, skill) %>%
+  mutate(skill_type = 'soft')
+
+```
+
+### Hard Skills
+
 ```{r}
 # List all hard skills and how often they were listed in a separate dataframe
 for (i in 1:nrow(df_raw)) {
   slist <- str_extract_all(df$Skill[i], "'.+?'")
   temp_df <- data.frame(skill = slist[[1]])
-  
+
   if (nrow(temp_df) > 0) {
-    
+
     temp_df$id <- i - 1
     temp_df$skill <- as.character(temp_df$skill)
     temp_df <- select(temp_df, id, skill)
-    
+
     if (i == 1) {
       sdf <- temp_df
     } else {
@@ -92,17 +106,22 @@ for (i in 1:nrow(df_raw)) {
     }
   }
 }
+
 # Remove quotes and trim whitespace
 sdf$skill <- str_replace_all(sdf$skill, "'", "")
 sdf$skill <- str_replace_all(sdf$skill, '"', "")
 sdf$skill <- str_trim(sdf$skill)
+
 sdf$skill_type <- 'hard'
+
 # Combine skills
 skills <- bind_rows(df2, sdf)
 ```
 
 
 ### Job Title
+
+# Data Tidying/ Transformation
 
 ```{r, warning = FALSE}
 df <- df_raw
@@ -126,11 +145,11 @@ final.data.df$Job_Title <- as.character( as.character( job.indeed.df$Job_Title) 
 
 # Working on the counts:
 for (i in 1: nrow(job.indeed.df)) {
-  
+
   final.data.df$analyst[i] <- if(grepl(paste(pattern.analyst,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
   final.data.df$engineer[i] <- if(grepl(paste(pattern.engineer,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
   final.data.df$scientist[i] <- if(grepl(paste(pattern.scientist,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
-  
+
   final.data.df$junior[i] <- if(grepl(paste(pattern.junior,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
   final.data.df$senior[i] <- if(grepl(paste(pattern.senior,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
 }
@@ -139,7 +158,7 @@ for (i in 1: nrow(job.indeed.df)) {
 #c.count <- c(sum(final.data.df$analyst) ,sum(final.data.df$engineer), sum(final.data.df$scientist),sum(final.data.df$junior), sum(final.data.df$senior ) )
 #set.seed(1234)
 #wordcloud(words = c.word, freq = c.count, min.freq = 1,
-#          max.words=10, random.order=FALSE, rot.per=0.35, 
+#          max.words=10, random.order=FALSE, rot.per=0.35,
 #          colors=brewer.pal(8, "Dark2"))
 # Add job title flags to original dataframe
 
