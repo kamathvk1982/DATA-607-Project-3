@@ -73,17 +73,6 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
   mutate(skill_type = 'soft')
 ```
 
-### Hard Skills
-
-
-#Gather soft skills
-df2 <- df[,c(1, 44:ncol(df))] %>%
-  gather(skill, flag, -X) %>%
-  filter(flag == 1) %>%
-  select(id = X, skill) %>%
-  mutate(skill_type = 'soft')
-
-```
 
 ### Hard Skills
 
@@ -120,8 +109,6 @@ skills <- bind_rows(df2, sdf)
 
 
 ### Job Title
-
-# Data Tidying/ Transformation
 
 ```{r, warning = FALSE}
 df <- df_raw
