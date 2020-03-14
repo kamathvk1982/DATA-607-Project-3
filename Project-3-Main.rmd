@@ -152,4 +152,8 @@ for (i in 1: nrow(job.indeed.df)) {
 #          max.words=10, random.order=FALSE, rot.per=0.35, 
 #          colors=brewer.pal(8, "Dark2"))
 
+
+# Add job title flags to original dataframe
+df_all <- left_join(df_raw, final.data.df[,-2], by = c('X' = 'Id'))
+
 ```
