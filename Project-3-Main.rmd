@@ -17,6 +17,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 library(stringr)
 library(knitr)
 library(tidyr)
@@ -32,6 +33,7 @@ library(dplyr)
 ```{r}
 #Loads the dataset
 df_raw <- read.csv("https://raw.githubusercontent.com/davidblumenstiel/data/master/indeed_job_dataset.csv",stringsAsFactors = FALSE)
+
 #Create working df object
 df <- df_raw
 ```
@@ -63,6 +65,18 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
 
 ## Hard Skills
 
+
+#Gather soft skills
+df2 <- df[,c(1, 44:ncol(df))] %>%
+  gather(skill, flag, -X) %>%
+  filter(flag == 1) %>%
+  select(id = X, skill) %>%
+  mutate(skill_type = 'soft')
+
+```
+
+### Hard Skills
+
 ```{r}
 # List all hard skills and how often they were listed in a separate dataframe
 for (i in 1:nrow(df_raw)) {
@@ -82,17 +96,23 @@ for (i in 1:nrow(df_raw)) {
     }
   }
 }
+
 # Remove quotes and trim whitespace
 sdf$skill <- str_replace_all(sdf$skill, "'", "")
 sdf$skill <- str_replace_all(sdf$skill, '"', "")
 sdf$skill <- str_trim(sdf$skill)
+
 sdf$skill_type <- 'hard'
+
 # Combine skills
 skills <- bind_rows(df2, sdf)
 ```
 
 
+
 ## Job Title
+
+# Data Tidying/ Transformation
 
 ```{r, warning = FALSE}
 df <- df_raw
