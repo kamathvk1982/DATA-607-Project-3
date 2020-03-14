@@ -14,6 +14,7 @@ library("RColorBrewer")
 
 ```
 
+#Manolis test
 
 ```{r}
 #Loads the dataset
@@ -34,6 +35,9 @@ for (desc in df$Description) {
   i = i + 1
   df[i,keywordColIndex] <-(as.integer(str_detect(desc,fixed(keywords, ignore_case = TRUE))))
 }
+
+#Gets rid of the descriptions
+df$Description <- NULL
 
 ```
 
