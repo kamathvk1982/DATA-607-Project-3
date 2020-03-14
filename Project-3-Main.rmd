@@ -60,7 +60,7 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
 ```{r}
 # List all hard skills and how often they were listed in a separate dataframe
 for (i in 1:nrow(df_raw)) {
-  slist <- str_extract_all(ds$Skill[i], "'.+?'")
+  slist <- str_extract_all(df$Skill[i], "'.+?'")
   temp_df <- data.frame(skill = slist[[1]])
   
   if (nrow(temp_df) > 0) {
