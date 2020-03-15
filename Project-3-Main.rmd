@@ -63,7 +63,6 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
   mutate(skill_type = 'soft')
 ```
 
-
 ```{r}
 #Gather soft skills
 df2 <- df[,c(1, 44:ncol(df))] %>%
@@ -149,7 +148,9 @@ for (i in 1: nrow(job.indeed.df)) {
 #          colors=brewer.pal(8, "Dark2"))
 # Add job title flags to original dataframe
 
+
 # Merging with main Analysis Data Frame:
+
 df_all <- left_join(df_raw, final.data.df[,-2], by = c('X' = 'Id'))
 
 ```
