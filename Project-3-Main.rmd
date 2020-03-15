@@ -78,7 +78,7 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
 ```{r}
 # List all hard skills and how often they were listed in a separate dataframe
 for (i in 1:nrow(df_raw)) {
-  slist <- str_extract_all(df$Skill[i], "'.+?'")
+  slist <- str_extract_all(df_raw$Skill[i], "'.+?'")
   temp_df <- data.frame(skill = slist[[1]])
 
   if (nrow(temp_df) > 0) {
@@ -151,6 +151,140 @@ for (i in 1: nrow(job.indeed.df)) {
 
 # Merging with main Analysis Data Frame:
 
-df_all <- left_join(df_raw, final.data.df[,-2], by = c('X' = 'Id'))
+df_all <- left_join(df_raw[,1:16], final.data.df[,-2], by = c('X' = 'Id'))
+
+names(df_all)[1] <- 'job_id'
+
+
+
+# hard skills dataframe for visualizations
+hs <- filter(skills, skill_type == 'hard') %>%
+  left_join(final.data.df, by = c('id' = 'Id')) %>%
+  mutate(analyst = ifelse(analyst == 1, id, NA),
+         engineer = ifelse(engineer == 1, id, NA),
+         scientist = ifelse(scientist == 1, id, NA),
+         junior = ifelse(junior == 1, id, NA),
+         senior = ifelse(senior == 1, id, NA)) %>% 
+  group_by(skill) %>%
+  summarize(total_count = n(),
+            ana_ids = n_distinct(analyst),
+            ana_pct = ana_ids / sum(df_all$analyst),
+            eng_ids = n_distinct(engineer),
+            eng_pct = eng_ids / sum(df_all$engineer),
+            sci_ids = n_distinct(scientist),
+            sci_pct = sci_ids / sum(df_all$scientist),
+            jr_ids = n_distinct(junior),
+            jr_pct = jr_ids / sum(df_all$junior),
+            sr_ids = n_distinct(senior),
+            sr_pct = sr_ids / sum(df_all$senior))
+
+head(hs)
+
+
+# specify top number of skills
+top_x <- 20
+
+# Top Hard Skills for All Data Postings
+ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, total_count), y = total_count/nrow(df_all))) +
+  geom_col() +
+  coord_flip() +
+  labs(title = str_c('Top ', top_x, ' Technical Skills'),
+       subtitle = str_c('Data Analysts/Engineers/Scientists'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+
+# Top Hard Skills for Data Scientists
+ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, sci_pct), y = sci_pct)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = str_c('Top ', top_x, ' Technical Skills'),
+       subtitle = str_c('Data Scientists'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+
+# Top Hard Skills for Data Analysts
+ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, ana_pct), y = ana_pct)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = str_c('Top ', top_x, ' Technical Skills'),
+       subtitle = str_c('Data Analysts'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+
+# Top Hard Skills for Data Engineers
+ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, eng_pct), y = eng_pct)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = str_c('Top ', top_x, ' Technical Skills'),
+       subtitle = str_c('Data Engineers'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+
+
+
+
+hs_jr_base <- filter(skills, skill_type == 'hard') %>%
+  inner_join(filter(final.data.df, junior == 1 & scientist == 1), by = c('id' = 'Id')) 
+
+hs_jr <-  group_by(hs_jr_base, skill) %>%
+  summarize(total_count = n())
+
+hs_jr_denom <- n_distinct(hs_jr_base$id)
+
+head(hs_jr)
+
+# Top Hard Skills for Junior Data Scientists
+ggplot( arrange(hs_jr, desc(total_count))[1:top_x,], aes(x = reorder(skill, total_count), y = total_count/hs_jr_denom)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = str_c('Top ', top_x, ' Technical Skills'),
+       subtitle = str_c('Junior Data Scientists'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+
+
+hs_sr_base <- filter(skills, skill_type == 'hard') %>%
+  inner_join(filter(final.data.df, senior == 1 & scientist == 1), by = c('id' = 'Id')) 
+
+hs_sr <- group_by(hs_sr_base, skill) %>%
+  summarize(total_count = n())
+
+hs_sr_denom <- n_distinct(hs_sr_base$id)
+
+head(hs_sr)
+
+# Top Hard Skills for Senior Data Scientists
+ggplot( arrange(hs_sr, desc(total_count))[1:top_x,], aes(x = reorder(skill, total_count), y = total_count/hs_sr_denom)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = str_c('Top ', top_x, ' Technical Skills'),
+       subtitle = str_c('Senior Data Scientists'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+
+
+
+sci_industry <- filter(df_all, scientist == 1 & Company_Industry != '') %>%
+  group_by(Company_Industry) %>%
+  summarize(postings = n()) %>%
+  arrange(desc(postings))
+
+head(sci_industry)
+
+# Top Company Industries Seeking Data Scientists
+ggplot(sci_industry[1:10,], aes(x = reorder(Company_Industry, postings), y = postings / sum(sci_industry$postings))) +
+  geom_col() +
+  coord_flip() +
+  labs(title = 'Top 10 Company Industries',
+       subtitle = str_c('Data Scientist Posts'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
 
 ```
