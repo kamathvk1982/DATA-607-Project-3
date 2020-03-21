@@ -72,10 +72,10 @@ df_raw <- read.csv("https://raw.githubusercontent.com/davidblumenstiel/data/mast
 df <- df_raw
 ```
 
-### Soft Skills
+### Programatically reading through the job-descriptions to extract mentions of the 'soft-skills'
 
 ```{r}
-#keywords as 'keywords'
+#The soft skills we will look will be stored as: 'keywords'
 keywords<-unname(unlist(read.csv("https://raw.githubusercontent.com/chilleundso/DATA607/master/Project3/softskills.csv", stringsAsFactors = FALSE)))
 
 #Iniates new columns for each keyword; also makes list index list
@@ -90,10 +90,10 @@ for (desc in df$Description) {
   df[i,keywordColIndex] <-(as.integer(str_detect(desc,fixed(keywords, ignore_case = TRUE))))
 }
 
-#Gets rid of the descriptions
+#Gets rid of the descriptions to save space
 df$Description <- NULL
 
-#Gather soft skills
+#Gathers soft skills into a tidy dataset: df2
 df2 <- df[,c(1, 44:ncol(df))] %>%
   gather(skill, flag, -X) %>%
   filter(flag == 1) %>%
@@ -101,14 +101,6 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
   mutate(skill_type = 'soft')
 ```
 
-```{r}
-#Gather soft skills
-df2 <- df[,c(1, 44:ncol(df))] %>%
-  gather(skill, flag, -X) %>%
-  filter(flag == 1) %>%
-  select(id = X, skill) %>%
-  mutate(skill_type = 'soft')
-```
 
 
 ### Hard Skills
