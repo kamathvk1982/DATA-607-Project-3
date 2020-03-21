@@ -346,8 +346,8 @@ p <- p + geom_polygon(data=Total, aes(x=long, y=lat, group = group, fill=Total$t
 
 p
 ```
-## The Question on Everybody's Mind: What Technical Skills will Get Me a High Paying Job?
-### First, we need to select and arrange the data we want to use
+### The Question on Everybody's Mind: What Technical Skills will Get Me a High Paying Job?
+#### First, we need to select and arrange the data we want to use
 
 ```{r}
 #Creates a hard-skill and salary, and job type dataset
@@ -393,7 +393,7 @@ for (i in Pay_Grades) {
 
 ```
 
-### Statistical analysis using chi-squared to filter to only significant findings
+#### Statistical analysis using chi-squared to filter to only significant findings
 ```{r}
 #Specify the significance level
 sig <- 0.05
@@ -434,7 +434,7 @@ while (j < nrow(PayTable)) {
 }
 ```
 
-### Proportion plots for skills vs salary
+#### Proportion plots for skills vs salary
 
 ##### The plots below show the proportions of posts that mention a skill for each salary range.  The horizontal bar would be the expected proportion if there was no difference in the proportion of mentions according to the salary range.  The plots shown are only those for which there were over 200 skill mentions p > 0.05 (as determined by chi squared tests).  There are several interesting findings below, and if one is interested in knowing which skills seem to correlate with the highest paying jobs: C/C++, Hadoop, Hive, Java, NLP, Scala, Spark, and TensorFlow.
 
