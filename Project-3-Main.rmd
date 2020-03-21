@@ -17,15 +17,48 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
 library(stringr)
 library(knitr)
 library(tidyr)
 library(dplyr)
+library(ggplot2)
+library(scales)
+
+
 #install.packages("wordcloud")
-#library("wordcloud")
+library("wordcloud")
 #install.packages("RColorBrewer")
-#library("RColorBrewer")
+library("RColorBrewer")
+library(maps)
+
+stateFromLower <-function(x) {
+   #read 52 state codes into local variable [includes DC (Washington D.C. and PR (Puerto Rico)]
+  st.codes<-data.frame(
+                      state=as.factor(c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA",
+                                         "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
+                                         "MI", "MN", "MO", "MS",  "MT", "NC", "ND", "NE", "NH", "NJ", "NM",
+                                         "NV", "NY", "OH", "OK", "OR", "PA", "PR", "RI", "SC", "SD", "TN",
+                                         "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")),
+                      full=as.factor(c("alaska","alabama","arkansas","arizona","california","colorado",
+                                       "connecticut","district of columbia","delaware","florida","georgia",
+                                       "hawaii","iowa","idaho","illinois","indiana","kansas","kentucky",
+                                       "louisiana","massachusetts","maryland","maine","michigan","minnesota",
+                                       "missouri","mississippi","montana","north carolina","north dakota",
+                                       "nebraska","new hampshire","new jersey","new mexico","nevada",
+                                       "new york","ohio","oklahoma","oregon","pennsylvania","puerto rico",
+                                       "rhode island","south carolina","south dakota","tennessee","texas",
+                                       "utah","virginia","vermont","washington","wisconsin",
+                                       "west virginia","wyoming"))
+                       )
+     #create an nx1 data.frame of state codes from source column
+  st.x<-data.frame(state=x)
+     #match source codes with codes from 'st.codes' local variable and use to return the full state name
+  refac.x<-st.codes$full[match(st.x$state,st.codes$state)]
+     #return the full state names in the same order in which they appeared in the original source
+  return(refac.x)
+ 
+}
+
 ```
 
 ### Import
@@ -43,9 +76,11 @@ df <- df_raw
 ```{r}
 #keywords as 'keywords'
 keywords<-unname(unlist(read.csv("https://raw.githubusercontent.com/chilleundso/DATA607/master/Project3/softskills.csv", stringsAsFactors = FALSE)))
+
 #Iniates new columns for each keyword; also makes list index list
 df[keywords] <- NA
 keywordColIndex <- seq(length(df)-length(keywords)+1,length(df),1)
+
 #Will determine if contains keywords; occurs (1), or doesnt occur(0)
 #Coerces multiple occurances to 1
 i = 0
@@ -53,8 +88,10 @@ for (desc in df$Description) {
   i = i + 1
   df[i,keywordColIndex] <-(as.integer(str_detect(desc,fixed(keywords, ignore_case = TRUE))))
 }
+
 #Gets rid of the descriptions
 df$Description <- NULL
+
 #Gather soft skills
 df2 <- df[,c(1, 44:ncol(df))] %>%
   gather(skill, flag, -X) %>%
@@ -78,15 +115,12 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
 ```{r}
 # List all hard skills and how often they were listed in a separate dataframe
 for (i in 1:nrow(df_raw)) {
-  slist <- str_extract_all(df$Skill[i], "'.+?'")
+  slist <- str_extract_all(df_raw$Skill[i], "'.+?'")
   temp_df <- data.frame(skill = slist[[1]])
-
   if (nrow(temp_df) > 0) {
-
     temp_df$id <- i - 1
     temp_df$skill <- as.character(temp_df$skill)
     temp_df <- select(temp_df, id, skill)
-
     if (i == 1) {
       sdf <- temp_df
     } else {
@@ -99,7 +133,6 @@ for (i in 1:nrow(df_raw)) {
 sdf$skill <- str_replace_all(sdf$skill, "'", "")
 sdf$skill <- str_replace_all(sdf$skill, '"', "")
 sdf$skill <- str_trim(sdf$skill)
-
 sdf$skill_type <- 'hard'
 
 # Combine skills
@@ -111,7 +144,6 @@ skills <- bind_rows(df2, sdf)
 
 ```{r, warning = FALSE}
 df <- df_raw
-
 job.indeed.df  <- df %>%
   select(c(Id=X, (Job_Title)))
 
@@ -131,26 +163,193 @@ final.data.df$Job_Title <- as.character( as.character( job.indeed.df$Job_Title) 
 
 # Working on the counts:
 for (i in 1: nrow(job.indeed.df)) {
-
   final.data.df$analyst[i] <- if(grepl(paste(pattern.analyst,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
   final.data.df$engineer[i] <- if(grepl(paste(pattern.engineer,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
   final.data.df$scientist[i] <- if(grepl(paste(pattern.scientist,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
-
   final.data.df$junior[i] <- if(grepl(paste(pattern.junior,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
   final.data.df$senior[i] <- if(grepl(paste(pattern.senior,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
 }
 
-#c.word <- c('analyst','engineer','scientist','junior','senior')
-#c.count <- c(sum(final.data.df$analyst) ,sum(final.data.df$engineer), sum(final.data.df$scientist),sum(final.data.df$junior), sum(final.data.df$senior ) )
-#set.seed(1234)
-#wordcloud(words = c.word, freq = c.count, min.freq = 1,
-#          max.words=10, random.order=FALSE, rot.per=0.35,
-#          colors=brewer.pal(8, "Dark2"))
+
 # Add job title flags to original dataframe
-
-
 # Merging with main Analysis Data Frame:
+df_all <- left_join(df_raw[,1:16], final.data.df[,-2], by = c('X' = 'Id'))
+names(df_all)[1] <- 'job_id'
 
-df_all <- left_join(df_raw, final.data.df[,-2], by = c('X' = 'Id'))
 
+
+# hard skills dataframe for visualizations
+hs <- filter(skills, skill_type == 'hard') %>%
+  left_join(final.data.df, by = c('id' = 'Id')) %>%
+  mutate(analyst = ifelse(analyst == 1, id, NA),
+         engineer = ifelse(engineer == 1, id, NA),
+         scientist = ifelse(scientist == 1, id, NA),
+         junior = ifelse(junior == 1, id, NA),
+         senior = ifelse(senior == 1, id, NA)) %>% 
+  group_by(skill) %>%
+  summarize(total_count = n(),
+            ana_ids = n_distinct(analyst),
+            ana_pct = ana_ids / sum(df_all$analyst),
+            eng_ids = n_distinct(engineer),
+            eng_pct = eng_ids / sum(df_all$engineer),
+            sci_ids = n_distinct(scientist),
+            sci_pct = sci_ids / sum(df_all$scientist),
+            jr_ids = n_distinct(junior),
+            jr_pct = jr_ids / sum(df_all$junior),
+            sr_ids = n_distinct(senior),
+            sr_pct = sr_ids / sum(df_all$senior))
+head(hs)
+
+# specify top number of skills
+top_x <- 20
+
+# Top Hard Skills for All Data Postings
+ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, total_count), y = total_count/nrow(df_all))) +
+  geom_col() +
+  coord_flip() +
+  labs(title = str_c('Top ', top_x, ' Technical Skills'),
+       subtitle = str_c('Data Analysts/Engineers/Scientists'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+
+# Top Hard Skills for Data Scientists
+ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, sci_pct), y = sci_pct)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = str_c('Top ', top_x, ' Technical Skills'),
+       subtitle = str_c('Data Scientists'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+
+# Top Hard Skills for Data Analysts
+ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, ana_pct), y = ana_pct)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = str_c('Top ', top_x, ' Technical Skills'),
+       subtitle = str_c('Data Analysts'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+
+# Top Hard Skills for Data Engineers
+ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, eng_pct), y = eng_pct)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = str_c('Top ', top_x, ' Technical Skills'),
+       subtitle = str_c('Data Engineers'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+hs_jr_base <- filter(skills, skill_type == 'hard') %>%
+  inner_join(filter(final.data.df, junior == 1 & scientist == 1), by = c('id' = 'Id')) 
+hs_jr <-  group_by(hs_jr_base, skill) %>%
+  summarize(total_count = n())
+hs_jr_denom <- n_distinct(hs_jr_base$id)
+head(hs_jr)
+
+# Top Hard Skills for Junior Data Scientists
+ggplot( arrange(hs_jr, desc(total_count))[1:top_x,], aes(x = reorder(skill, total_count), y = total_count/hs_jr_denom)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = str_c('Top ', top_x, ' Technical Skills'),
+       subtitle = str_c('Junior Data Scientists'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+hs_sr_base <- filter(skills, skill_type == 'hard') %>%
+  inner_join(filter(final.data.df, senior == 1 & scientist == 1), by = c('id' = 'Id')) 
+hs_sr <- group_by(hs_sr_base, skill) %>%
+  summarize(total_count = n())
+hs_sr_denom <- n_distinct(hs_sr_base$id)
+head(hs_sr)
+
+# Top Hard Skills for Senior Data Scientists
+ggplot( arrange(hs_sr, desc(total_count))[1:top_x,], aes(x = reorder(skill, total_count), y = total_count/hs_sr_denom)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = str_c('Top ', top_x, ' Technical Skills'),
+       subtitle = str_c('Senior Data Scientists'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+sci_industry <- filter(df_all, scientist == 1 & Company_Industry != '') %>%
+  group_by(Company_Industry) %>%
+  summarize(postings = n()) %>%
+  arrange(desc(postings))
+head(sci_industry)
+
+# Top Company Industries Seeking Data Scientists
+ggplot(sci_industry[1:10,], aes(x = reorder(Company_Industry, postings), y = postings / sum(sci_industry$postings))) +
+  geom_col() +
+  coord_flip() +
+  labs(title = 'Top 10 Company Industries',
+       subtitle = str_c('Data Scientist Posts'),
+       y = "% of Job Posts",
+       x = element_blank()) +
+  scale_y_continuous(label = percent_format(accuracy = 1))
+
+
+# WordCLoud map for the soft and hard skillset that high rating/star companies are 
+# looking for in engineer vs analyst/scientist Position: 
+df.stars.5 <- df_all %>%
+  filter(No_of_Stars ==5  ) %>%
+  select(job_id, Queried_Salary,   Company_Industry, analyst, engineer, scientist , junior, senior ) %>%
+  inner_join(skills, by = c( 'job_id' = 'id'))
+
+df.stars.5.engg <- df.stars.5 %>% 
+  filter ( engineer ==1) %>%
+  group_by(skill) %>%
+  summarize(total_count = n())
+
+df.stars.5.ana.sci <- df.stars.5 %>% 
+  filter ( analyst + scientist > 0 ) %>%
+  group_by(skill) %>%
+  summarize(total_count = n())
+
+
+set.seed(1234)
+wordcloud(words = df.stars.5.engg$skill, freq = df.stars.5.engg$total_count, min.freq = 1,
+          max.words=100, random.order=FALSE, rot.per=0.10,
+          colors=brewer.pal(8, "Dark2"))
+
+wordcloud(words = df.stars.5.ana.sci$skill, freq = df.stars.5.ana.sci$total_count, min.freq = 1,
+          max.words=100, random.order=FALSE, rot.per=0.10, 
+          colors=brewer.pal(8, "Dark2"))
+
+# Salary Range by titles given by high rating/star companies:
+df.stars.5.Salary <- df.stars.5 %>% 
+  group_by(Queried_Salary) %>%
+  summarize(total_count = n(),
+            ana_total = sum(analyst),
+            eng_totals = sum(engineer),
+            sci_total = sum(scientist),
+            jr_total = sum(junior),
+            sr_total = sum(senior))
+
+kable(df.stars.5.Salary)
+# ==> We can see from above no junior level roles; No Engineer roles with greater then 
+#     160,000 USD
+```
+
+```{r, warning = FALSE}
+#Statewise Job posting for Data Science Jobs: 
+df.states <- df_all %>% 
+  select(job_id, Location ) %>%
+  group_by(Location) %>%
+  summarize(total_count = n())
+
+all_states <- map_data("state")
+
+df.states$region <- stateFromLower(df.states$Location)
+Total <- merge(all_states, df.states, by="region")
+
+Total <- Total[Total$region!="REMOTE",]
+
+p <- ggplot()
+p <- p + geom_polygon(data=Total, aes(x=long, y=lat, group = group, fill=Total$total_count),colour="white"
+      ) + scale_fill_continuous(low = "#56B4E9", high = "#0072B2", guide="colorbar")
+
+p
 ```
