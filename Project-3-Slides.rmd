@@ -70,9 +70,10 @@ df <- df_raw
 
 
 
-## Soft Skills 
 
-```{r, include = T}
+
+```{r, include = F}
+## Soft Skills 
 
 #keywords as 'keywords'
 keywords<-unname(unlist(read.csv("https://raw.githubusercontent.com/chilleundso/DATA607/master/Project3/softskills.csv", stringsAsFactors = FALSE)))
@@ -109,10 +110,10 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
   mutate(skill_type = 'soft')
 ```
 
+
+
+```{r, include = F}
 ## Hard Skills
-
-```{r, include = T}
-
 
 # List all hard skills and how often they were listed in a separate dataframe
 for (i in 1:nrow(df_raw)) {
@@ -141,9 +142,11 @@ skills <- bind_rows(df2, sdf)
 ```
 
 
+
+
+```{r, warning = FALSE, include = F}
 ## Job Title
 
-```{r, warning = FALSE, include = T}
 df <- df_raw
 job.indeed.df  <- df %>%
   select(c(Id=X, (Job_Title)))
