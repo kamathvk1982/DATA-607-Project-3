@@ -20,10 +20,12 @@ knitr::opts_chunk$set(echo = TRUE)
 library(stringr)
 library(knitr)
 library(tidyr)
+library(Rmisc)
 library(dplyr)
 library(ggplot2)
 library(scales)
-
+library(stats)
+library(grid)
 #install.packages("wordcloud")
 library("wordcloud")
 #install.packages("RColorBrewer")
@@ -186,8 +188,8 @@ hs <- filter(skills, skill_type == 'hard') %>%
          scientist = ifelse(scientist == 1, id, NA),
          junior = ifelse(junior == 1, id, NA),
          senior = ifelse(senior == 1, id, NA)) %>% 
-  group_by(skill) %>%
-  summarize(total_count = n(),
+  dplyr::group_by(skill) %>%
+  dplyr::summarize(total_count = n(),
             ana_ids = n_distinct(analyst),
             ana_pct = ana_ids / sum(df_all$analyst),
             eng_ids = n_distinct(engineer),
