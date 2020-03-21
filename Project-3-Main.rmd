@@ -354,8 +354,8 @@ p <- p + geom_polygon(data=Total, aes(x=long, y=lat, group = group, fill=Total$t
 
 p
 ```
-## Finding correlations between technical skills and salary
-### First, we need to select and arrange the data we want
+## The Question on Everybody's Mind: What Technical Skills will Get Me a High Paying Job?
+### First, we need to select and arrange the data we want to use
 
 ```{r}
 #Creates a hard-skill and salary, and job type dataset
@@ -374,7 +374,7 @@ Skill_PayDS <- filter(Skill_Pay,Job_Type == 'data_scientist')
 #Changes the 'skill' column to a factor type
 Skill_PayDS$skill <- as.factor(Skill_PayDS$skill)
 
-#Filters it to skills mentioned
+#Filters it to skills mentioned over 200 times (to keep sample size high for analysis)
 mentions <- 200
 stab = table(Skill_PayDS$skill)
 Skill_PayDS <- Skill_PayDS[Skill_PayDS$skill %in% names(stab)[stab >= mentions],]
@@ -386,7 +386,7 @@ Skill_PayDS <- droplevels(Skill_PayDS)
 Pay_Grades <- c("<80000", "80000-99999", "100000-119999", "120000-139999", "140000-159999",">160000")
 Skill_PayDS$Salary <- factor(Skill_PayDS$Salary, levels = Pay_Grades)
 
-#Makes a dataframe of Skills vs Salary
+#Makes a table of Skills vs Salary
 PayTable<- table(Skill_PayDS$skill ,Skill_PayDS$Salary)
 PayTable
 
@@ -401,7 +401,7 @@ for (i in Pay_Grades) {
 
 ```
 
-### What types of skills do each pay-grade tend to mention?
+### Statistical analysis using chi-squared to filter to only significant findings
 ```{r}
 #Specify the significance level
 sig <- 0.05
