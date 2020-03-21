@@ -14,6 +14,8 @@ output:
       number_sections: true    
   pdf_document: default
 ---
+### Overview:
+#### The objective of this project was to answer the question: "Which are the most valued data science skills?".  The dataset used to answer this question was sourced from Kaggle: https://www.kaggle.com/elroyggj/indeed-dataset-data-scientistanalystengineer.  It contains information from 5715 data-science related job postings on the job-listings site, Indeed.  It includes information like the job titles, descriptions, technical skills required, state, salary, and more.  The dataset was cleaned and prepaired, then analyzed for the top skills required for each job-type, the locations of jobs, and for the skills that different pay-grades tend to require.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
