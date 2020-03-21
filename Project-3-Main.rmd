@@ -248,7 +248,7 @@ ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, eng_pct
 hs_jr_base <- filter(skills, skill_type == 'hard') %>%
   inner_join(filter(final.data.df, junior == 1 & scientist == 1), by = c('id' = 'Id')) 
 hs_jr <-  group_by(hs_jr_base, skill) %>%
-  summarize(total_count = n())
+  dplyr::summarize(total_count = n())
 hs_jr_denom <- n_distinct(hs_jr_base$id)
 
 # Top Hard Skills for Junior Data Scientists
@@ -264,7 +264,7 @@ ggplot( arrange(hs_jr, desc(total_count))[1:top_x,], aes(x = reorder(skill, tota
 hs_sr_base <- filter(skills, skill_type == 'hard') %>%
   inner_join(filter(final.data.df, senior == 1 & scientist == 1), by = c('id' = 'Id')) 
 hs_sr <- group_by(hs_sr_base, skill) %>%
-  summarize(total_count = n())
+  dplyr::summarize(total_count = n())
 hs_sr_denom <- n_distinct(hs_sr_base$id)
 
 # Top Hard Skills for Senior Data Scientists
@@ -277,8 +277,8 @@ ggplot( arrange(hs_sr, desc(total_count))[1:top_x,], aes(x = reorder(skill, tota
        x = element_blank()) +
   scale_y_continuous(label = percent_format(accuracy = 1))
 sci_industry <- filter(df_all, scientist == 1 & Company_Industry != '') %>%
-  group_by(Company_Industry) %>%
-  summarize(postings = n()) %>%
+  dplyr::group_by(Company_Industry) %>%
+  dplyr::summarize(postings = n()) %>%
   arrange(desc(postings))
 
 # Top Company Industries Seeking Data Scientists
@@ -353,4 +353,120 @@ p <- p + geom_polygon(data=Total, aes(x=long, y=lat, group = group, fill=Total$t
       ) + scale_fill_continuous(low = "#56B4E9", high = "#0072B2", guide="colorbar")
 
 p
+```
+## Finding correlations between technical skills and salary
+### First, we need to select and arrange the data we want
+
+```{r}
+#Creates a hard-skill and salary, and job type dataset
+Skill_Pay <- sdf[1:2]
+Skill_Pay[c("Salary","Job_Type")] <- NA
+
+#Populates the salary and job type columns from the raw dataset
+for (i in Skill_Pay$id) {
+  Skill_Pay$Salary[Skill_Pay$id == i] <- df_raw$Queried_Salary[df_raw$X == i]
+  Skill_Pay$Job_Type[Skill_Pay$id == i] <- df_raw$Job_Type[df_raw$X == i]
+  }
+
+#Going to focus on only data_science-type jobs
+Skill_PayDS <- filter(Skill_Pay,Job_Type == 'data_scientist')
+
+#Changes the 'skill' column to a factor type
+Skill_PayDS$skill <- as.factor(Skill_PayDS$skill)
+
+#Filters it to skills mentioned
+mentions <- 200
+stab = table(Skill_PayDS$skill)
+Skill_PayDS <- Skill_PayDS[Skill_PayDS$skill %in% names(stab)[stab >= mentions],]
+
+#Drops the now un-used factors from skills
+Skill_PayDS <- droplevels(Skill_PayDS)
+
+#Factors and re-orders Salary
+Pay_Grades <- c("<80000", "80000-99999", "100000-119999", "120000-139999", "140000-159999",">160000")
+Skill_PayDS$Salary <- factor(Skill_PayDS$Salary, levels = Pay_Grades)
+
+#Makes a dataframe of Skills vs Salary
+PayTable<- table(Skill_PayDS$skill ,Skill_PayDS$Salary)
+PayTable
+
+#Gets a total count for the number of jobs by Salary: Job_Totals
+q = 0
+Job_Totals <- NA
+for (i in Pay_Grades) {
+  q = q + 1
+  Job_Totals[q] <- nrow(subset(df_raw, df_raw$Queried_Salary == i & df_raw$Job_Type == "data_scientist"))
+}
+
+Job_Totals
+PayTable
+
+```
+
+### What types of skills do each pay-grade tend to mention?
+```{r}
+#Specify the significance level
+sig <- 0.05
+
+
+#Loops through each skill
+j = 0
+k = 0
+
+plist <- NA
+SigSkills <- NA
+while (j < nrow(PayTable)) {
+  j = j + 1
+  
+  
+  i = 0
+  
+  unmentioned <- NA
+  
+  #Loops through the elemenents of each skill, and builds a vector of the number of jobs for which a skill-salary combo wasn't   mentioned: unmentioned
+  while (i < ncol(PayTable)) {
+    i = i + 1
+    unmentioned[i] <- Job_Totals[i] - PayTable[j,i]
+    
+  }
+
+  #Performed a chi-squared tests for by each skill by paygrade to determine skills mentioned with significant relationship
+  #Saves the skills with significant relationships to a list of names and their p-values to a seperate list
+  
+  
+  if (chisq.test(cbind(unmentioned,PayTable[j,]))$p.value < sig) {
+    k = k + 1
+    plist[k] <- chisq.test(cbind(unmentioned,PayTable[j,]))$p.value
+    SigSkills[k] <- names(PayTable[,1])[j]
+    
+    }
+  
+}
+```
+
+### Proportion plots for skills vs salary
+
+##### The plots below show the proportions of posts that mention a skill for each salary range.  The horizontal bar would be the expected proportion if there was no difference in the proportion of mentions according to the salary range.  The plots shown are only those for which there were over 200 skill mentions p > 0.05 (as determined by chi squared tests).  There are several interesting findings below, and if one is interested in knowing which skills seem to correlate with the highest paying jobs: C/C++, Hadoop, Hive, Java, NLP, Scala, Spark, and TensorFlow.
+
+```{r}
+i = 0
+skillplots <- list()
+while (i < length(SigSkills)) {
+  i = i + 1
+  plottemp <- as.data.frame(PayTable[SigSkills[i],]/Job_Totals)
+  print (ggplot(plottemp, aes(x = plottemp[,1], y = rownames(plottemp), fill = rownames(plottemp))) +
+    geom_bar(stat = "identity", width=0.9) +
+    scale_y_discrete(limits=rownames(plottemp)) +
+    geom_vline(xintercept = sum(PayTable[SigSkills[i],])/sum(Job_Totals)) +
+    scale_fill_brewer(palette=1, type = "qual") +
+    xlab("Proportion") +
+    ylab("Salary Range") +
+    ggtitle(paste("Proportion of Job Postings that Mention",SigSkills[i],";  p = ",round(plist[i], digits = 6))) +
+    labs(fill = "Salary Range")+
+    theme(axis.text.x = element_text(angle = 15)) +
+    coord_flip())
+  
+  
+}  
+
 ```
