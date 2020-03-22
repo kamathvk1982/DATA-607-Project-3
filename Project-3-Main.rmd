@@ -457,7 +457,7 @@ ggplot(sci_industry[1:10,], aes(x = reorder(Company_Industry, postings), y = pos
 ```
 
 ## Word Cloud
-```
+```{r}
 # WordCLoud map for the soft and hard skillset that high rating/star companies are 
 # looking for in engineer vs analyst/scientist Position: 
 df.stars.5 <- df_all %>%
