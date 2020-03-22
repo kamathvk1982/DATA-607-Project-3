@@ -292,6 +292,26 @@ names(df_all)[1] <- 'job_id'
 
 
 
+# Job Role Distribution by Position
+post_count <- nrow(df_raw)
+
+summarize(final.data.df, 
+                    Analyst = sum(analyst) / n(),
+                    Engineer = sum(engineer) / n(),
+                    Scientist = sum(scientist) / n()) %>%
+  gather(position, pct_of_posts) %>%
+  ggplot(aes(x = position, y = pct_of_posts)) +
+  geom_col(fill = 'grey80') +
+  geom_hline(yintercept = .333, linetype = 'dotted') +
+  scale_y_continuous(label = percent_format(accuracy = 1)) +
+  labs(x = element_blank(), 
+       y = element_blank(), 
+       title = 'Job Title Distribution', 
+       subtitle = str_c('Data Roles from ', comma(post_count), ' Posts')) +
+  theme(legend.position = 'none') +
+  theme_bw()
+
+
 # hard skills dataframe for visualizations
 hs <- filter(skills, skill_type == 'hard') %>%
   left_join(final.data.df, by = c('id' = 'Id')) %>%
