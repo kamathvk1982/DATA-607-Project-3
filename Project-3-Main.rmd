@@ -282,16 +282,19 @@ for (i in 1: nrow(job.indeed.df)) {
   final.data.df$junior[i] <- if(grepl(paste(pattern.junior,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
   final.data.df$senior[i] <- if(grepl(paste(pattern.senior,collapse="|"), job.indeed.df$Job_Title[i], ignore.case = TRUE) )  1 else 0
 }
+```
 
-
+## Combine Data
+```{r}
 # Add job title flags to original dataframe
 # Merging with main Analysis Data Frame:
 df_all <- left_join(df_raw[,1:16], final.data.df[,-2], by = c('X' = 'Id'))
 names(df_all)[1] <- 'job_id'
+```
 
 
-
-
+## Summary Visualizations
+```{r}
 # Job Role Distribution by Position
 post_count <- nrow(df_raw)
 
@@ -333,12 +336,14 @@ hs <- filter(skills, skill_type == 'hard') %>%
             sr_ids = n_distinct(senior),
             sr_pct = sr_ids / sum(df_all$senior))
 
+
 # specify top number of skills
-top_x <- 20
+top_x <- 10
+
 
 # Top Hard Skills for All Data Postings
 ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, total_count), y = total_count/nrow(df_all))) +
-  geom_col() +
+  geom_col()fill = 'grey60' +
   coord_flip() +
   labs(title = str_c('Top ', top_x, ' Technical Skills'),
        subtitle = str_c('Data Analysts/Engineers/Scientists'),
@@ -348,8 +353,8 @@ ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, total_c
 
 
 # Top Hard Skills for Data Scientists
-ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, sci_pct), y = sci_pct)) +
-  geom_col() +
+ggplot( arrange(hs, desc(sci_ids))[1:top_x,], aes(x = reorder(skill, sci_pct), y = sci_pct)) +
+  geom_col(fill = 'grey60') +
   coord_flip() +
   labs(title = str_c('Top ', top_x, ' Technical Skills'),
        subtitle = str_c('Data Scientists'),
@@ -357,9 +362,10 @@ ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, sci_pct
        x = element_blank()) +
   scale_y_continuous(label = percent_format(accuracy = 1))
 
+
 # Top Hard Skills for Data Analysts
-ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, ana_pct), y = ana_pct)) +
-  geom_col() +
+ggplot( arrange(hs, desc(ana_ids))[1:top_x,], aes(x = reorder(skill, ana_pct), y = ana_pct)) +
+  geom_col(fill = 'grey60') +
   coord_flip() +
   labs(title = str_c('Top ', top_x, ' Technical Skills'),
        subtitle = str_c('Data Analysts'),
@@ -367,9 +373,10 @@ ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, ana_pct
        x = element_blank()) +
   scale_y_continuous(label = percent_format(accuracy = 1))
 
+
 # Top Hard Skills for Data Engineers
-ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, eng_pct), y = eng_pct)) +
-  geom_col() +
+ggplot( arrange(hs, desc(eng_ids))[1:top_x,], aes(x = reorder(skill, eng_pct), y = eng_pct)) +
+  geom_col(fill = 'grey60') +
   coord_flip() +
   labs(title = str_c('Top ', top_x, ' Technical Skills'),
        subtitle = str_c('Data Engineers'),
@@ -377,15 +384,8 @@ ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, eng_pct
        x = element_blank()) +
   scale_y_continuous(label = percent_format(accuracy = 1))
   
-hs_jr_base <- filter(skills, skill_type == 'hard') %>%
-  inner_join(filter(final.data.df, junior == 1 & scientist == 1), by = c('id' = 'Id')) 
-hs_jr <-  group_by(hs_jr_base, skill) %>%
-  dplyr::summarize(total_count = n())
-hs_jr_denom <- n_distinct(hs_jr_base$id)
 
-
-## Distribution of Junior and Senior Data Scientist Roles
-
+# Distribution of Junior and Senior Data Scientist Roles
 jrs <- filter(final.data.df, junior == 1) %>%
   select(Id, Analyst = analyst, Engineer = engineer, Scientist = scientist) %>%
   gather(position, count, -Id)
@@ -408,8 +408,14 @@ ggplot(pos_and_role, aes(x = position, y = count, fill = level)) +
 
 
 # Top Hard Skills for Junior Data Scientists
+hs_jr_base <- filter(skills, skill_type == 'hard') %>%
+  inner_join(filter(final.data.df, junior == 1 & scientist == 1), by = c('id' = 'Id')) 
+hs_jr <-  group_by(hs_jr_base, skill) %>%
+  dplyr::summarize(total_count = n())
+hs_jr_denom <- n_distinct(hs_jr_base$id)
+
 ggplot( arrange(hs_jr, desc(total_count))[1:top_x,], aes(x = reorder(skill, total_count), y = total_count/hs_jr_denom)) +
-  geom_col() +
+  geom_col(fill = 'grey60') +
   coord_flip() +
   labs(title = str_c('Top ', top_x, ' Technical Skills'),
        subtitle = str_c('Junior Data Scientists'),
@@ -423,9 +429,10 @@ hs_sr <- group_by(hs_sr_base, skill) %>%
   dplyr::summarize(total_count = n())
 hs_sr_denom <- n_distinct(hs_sr_base$id)
 
+
 # Top Hard Skills for Senior Data Scientists
 ggplot( arrange(hs_sr, desc(total_count))[1:top_x,], aes(x = reorder(skill, total_count), y = total_count/hs_sr_denom)) +
-  geom_col() +
+  geom_col(fill = 'grey60') +
   coord_flip() +
   labs(title = str_c('Top ', top_x, ' Technical Skills'),
        subtitle = str_c('Senior Data Scientists'),
@@ -437,17 +444,20 @@ sci_industry <- filter(df_all, scientist == 1 & Company_Industry != '') %>%
   dplyr::summarize(postings = n()) %>%
   arrange(desc(postings))
 
+
 # Top Company Industries Seeking Data Scientists
 ggplot(sci_industry[1:10,], aes(x = reorder(Company_Industry, postings), y = postings / sum(sci_industry$postings))) +
-  geom_col() +
+  geom_col(fill = 'grey60') +
   coord_flip() +
   labs(title = 'Top 10 Company Industries',
        subtitle = str_c('Data Scientist Posts'),
        y = "% of Job Posts",
        x = element_blank()) +
   scale_y_continuous(label = percent_format(accuracy = 1))
+```
 
-
+## Word Cloud
+```
 # WordCLoud map for the soft and hard skillset that high rating/star companies are 
 # looking for in engineer vs analyst/scientist Position: 
 df.stars.5 <- df_all %>%
