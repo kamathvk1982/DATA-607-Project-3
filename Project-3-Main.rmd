@@ -304,7 +304,7 @@ names(df_all)[1] <- 'job_id'
 # Job Role Distribution by Position
 post_count <- nrow(df_raw)
 
-summarize(final.data.df, 
+dplyr::summarize(final.data.df, 
                     Analyst = sum(analyst) / n(),
                     Engineer = sum(engineer) / n(),
                     Scientist = sum(scientist) / n()) %>%
