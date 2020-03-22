@@ -73,8 +73,9 @@ df_raw <- read.csv("https://raw.githubusercontent.com/davidblumenstiel/data/mast
 #Create working df object
 df <- df_raw
 ```
+### Soft Skills
 
-### Programatically reading through the job-descriptions to extract mentions of the 'soft-skills'
+#### Skills that are not technical were not included in the dataset.  However, they are mentioned in the job descriptions.  So, we begin by programatically reading through the job-descriptions to extract mentions of the 'soft-skills'
 
 ```{r}
 #The soft skills we will look will be stored as: 'keywords'
@@ -104,9 +105,9 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
   select(id = X, skill) %>%
   mutate(skill_type = 'soft')
 ```
-### SOFT SKILLS
 
-#create data frames that have social skills by salary and jobtype
+#### We Create data frames that have social skills by salary and jobtype
+
 ```{r soft skill overview}
 
 soft_summary <- df %>%
@@ -122,7 +123,8 @@ avg_ss_by_salary <- aggregate(soft_summary[, ncol(soft_summary)], list(soft_summ
 names(avg_ss_by_salary)[1]<-"Queried_Salary"
 ```
 
-#we create a dataframe containing only the total amount of softskills per job and the job type and the salary band
+#### We create a dataframe containing only the total amount of softskills per job and the job type and the salary band
+
 ```{r soft skill overview graph}
 
 soft_sum_3cols <- soft_summary %>% select(Job_Type,Queried_Salary,sum)
@@ -169,7 +171,8 @@ ggplot(skillby_type_sal) +
 
 
 ```
-#looking at the extreme case of high salary data engineer
+#### Looking at the extreme case of high salary data engineer
+
 ```{r engineer_highsalary}
 eng_highs <- filter(df, Job_Type == "data_engineer" & Queried_Salary == ">160000")
 number_eng_highs <- nrow(eng_highs)
@@ -186,7 +189,8 @@ eng_highs_count <- eng_highs_count[order(-eng_highs_count$x),]
 rownames(eng_highs_count) <- NULL
 
 ```
-#looking at the extreme case of low salary data analyst
+#### Looking at the extreme case of low salary data analyst
+
 ```{r analyst_lowsalary}
 anl_lows <- filter(df, Job_Type == "data_analyst" & Queried_Salary == "<80000")
 number_anl_lows <- nrow(anl_lows)
@@ -204,9 +208,9 @@ anl_lows_count <- anl_lows_count[order(-anl_lows_count$x),]
 rownames(anl_lows_count) <- NULL
 
 ```
-#looking at the extreme cases of high salary data engineer and low salary data analyst together
+#### Looking at the extreme cases of high salary data engineer and low salary data analyst together
 ```{r topskills-table}
-
+library(kableExtra)
 table_eng_highs <- eng_highs_count[1:22,]
 table_anl_lows <- anl_lows_count[1:22,]
 
@@ -224,6 +228,7 @@ print(table_eng_highs)
 ```
 
 ### Hard Skills
+#### Here the hard skills are seperated out from the inbuilt list of skills in the raw dataset
 
 ```{r}
 # List all hard skills and how often they were listed in a separate dataframe
@@ -254,6 +259,7 @@ skills <- bind_rows(df2, sdf)
 
 
 ### Job Title
+#### Here we look at the different types of jobs and industries and compare the skills mentioned
 
 ```{r, warning = FALSE}
 df <- df_raw
@@ -284,7 +290,7 @@ for (i in 1: nrow(job.indeed.df)) {
 }
 ```
 
-## Combine Data
+#### Combine Data
 ```{r}
 # Add job title flags to original dataframe
 # Merging with main Analysis Data Frame:
@@ -293,7 +299,7 @@ names(df_all)[1] <- 'job_id'
 ```
 
 
-## Summary Visualizations
+#### Summary Visualizations
 ```{r}
 # Job Role Distribution by Position
 post_count <- nrow(df_raw)
@@ -456,7 +462,7 @@ ggplot(sci_industry[1:10,], aes(x = reorder(Company_Industry, postings), y = pos
   scale_y_continuous(label = percent_format(accuracy = 1))
 ```
 
-## Word Cloud
+#### Word Cloud
 ```{r}
 # WordCLoud map for the soft and hard skillset that high rating/star companies are 
 # looking for in engineer vs analyst/scientist Position: 
@@ -641,20 +647,20 @@ while (i < length(SigSkills)) {
 
 ```{r}
 #install.packages("RMySQL")
-library("RMySQL")
+#library("RMySQL")
 
-# Connection String to connect to the local host database:
-mysqlconnection = dbConnect(MySQL(), user = 'indeed', password = 'Indeed@123', dbname = 'indeed',
+## Connection String to connect to the local host database:
+#mysqlconnection = dbConnect(MySQL(), user = 'indeed', password = 'Indeed@123', dbname = 'indeed',
    host = 'localhost')
 
-# Lists the tables currently in the database: 
-dbListTables(mysqlconnection)
+## Lists the tables currently in the database: 
+#dbListTables(mysqlconnection)
 
-# Creating table and inserting rows from the mentioned dataframe; if table exists then it will overwrite:
-dbWriteTable(mysqlconnection, "skills", skills[, ], overwrite = TRUE, row.names = FALSE)
-dbWriteTable(mysqlconnection, "df_raw", df_raw[, ], overwrite = TRUE, row.names = FALSE)
+## Creating table and inserting rows from the mentioned dataframe; if table exists then it will overwrite:
+#dbWriteTable(mysqlconnection, "skills", skills[, ], overwrite = TRUE, row.names = FALSE)
+#dbWriteTable(mysqlconnection, "df_raw", df_raw[, ], overwrite = TRUE, row.names = FALSE)
 
-# Lists the tables existing and above two newly created ones:
-dbListTables(mysqlconnection)
+## Lists the tables existing and above two newly created ones:
+#dbListTables(mysqlconnection)
 
 ```
