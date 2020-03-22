@@ -582,21 +582,25 @@ while (i < length(SigSkills)) {
 ```
 
 ### Create a connection Object to MySQL database.
-#### We will connect to the sampel database named "jMsCGxUGVV"  created on cloud MySql [https://remotemysql.com/]
+#### We will connect to the sample database named "indeed"  created on local host
+#### Pls create the database manually on your local MySQL installation with details as in the connection string below
 
 ```{r}
 #install.packages("RMySQL")
 library("RMySQL")
 
+# Connection String to connect to the local host database:
 mysqlconnection = dbConnect(MySQL(), user = 'indeed', password = 'Indeed@123', dbname = 'indeed',
    host = 'localhost')
 
+# Lists the tables currently in the database: 
 dbListTables(mysqlconnection)
 
+# Creating table and inserting rows from the mentioned dataframe; if table exists then it will overwrite:
 dbWriteTable(mysqlconnection, "skills", skills[, ], overwrite = TRUE, row.names = FALSE)
 dbWriteTable(mysqlconnection, "df_raw", df_raw[, ], overwrite = TRUE, row.names = FALSE)
 
-
+# Lists the tables existing and above two newly created ones:
 dbListTables(mysqlconnection)
 
 ```
