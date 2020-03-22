@@ -383,6 +383,30 @@ hs_jr <-  group_by(hs_jr_base, skill) %>%
   dplyr::summarize(total_count = n())
 hs_jr_denom <- n_distinct(hs_jr_base$id)
 
+
+## Distribution of Junior and Senior Data Scientist Roles
+
+jrs <- filter(final.data.df, junior == 1) %>%
+  select(Id, Analyst = analyst, Engineer = engineer, Scientist = scientist) %>%
+  gather(position, count, -Id)
+jrs$level <- 'Junior'
+srs <- filter(final.data.df, senior == 1) %>%
+  select(Id, Analyst = analyst, Engineer = engineer, Scientist = scientist) %>%
+  gather(position, count, -Id)
+srs$level <- 'Senior'
+pos_and_role <- bind_rows(jrs, srs) %>%
+  group_by(level, position) %>%
+  summarize(count = sum(count))
+ggplot(pos_and_role, aes(x = position, y = count, fill = level)) +
+  geom_col(position = 'fill') +
+  theme_bw() +
+  scale_y_continuous(label = percent_format(accuracy = 1)) +
+  scale_fill_manual(values = c('lightskyblue3', 'royalblue4')) +
+  labs(x = element_blank(), 
+       y = element_blank(),
+       title = 'Distribution of Specified Levels')
+
+
 # Top Hard Skills for Junior Data Scientists
 ggplot( arrange(hs_jr, desc(total_count))[1:top_x,], aes(x = reorder(skill, total_count), y = total_count/hs_jr_denom)) +
   geom_col() +
