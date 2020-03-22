@@ -349,7 +349,7 @@ top_x <- 10
 
 # Top Hard Skills for All Data Postings
 ggplot( arrange(hs, desc(total_count))[1:top_x,], aes(x = reorder(skill, total_count), y = total_count/nrow(df_all))) +
-  geom_col()fill = 'grey60' +
+  geom_col(fill = 'grey60') +
   coord_flip() +
   labs(title = str_c('Top ', top_x, ' Technical Skills'),
        subtitle = str_c('Data Analysts/Engineers/Scientists'),
