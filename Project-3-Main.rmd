@@ -95,6 +95,8 @@ for (desc in df$Description) {
 #Gets rid of the descriptions to save space
 df$Description <- NULL
 
+
+
 #Gathers soft skills into a tidy dataset: df2
 df2 <- df[,c(1, 44:ncol(df))] %>%
   gather(skill, flag, -X) %>%
@@ -102,8 +104,124 @@ df2 <- df[,c(1, 44:ncol(df))] %>%
   select(id = X, skill) %>%
   mutate(skill_type = 'soft')
 ```
+### SOFT SKILLS
+
+#create data frames that have social skills by salary and jobtype
+```{r soft skill overview}
+
+soft_summary <- df %>%
+   replace(is.na(.), 0) %>%
+   mutate(sum = rowSums(.[43:ncol(df)]))
+
+#mean(soft_summary$sum)
+
+avg_ss_by_jobtype <- aggregate(soft_summary[, ncol(soft_summary)], list(soft_summary$Job_Type), mean)
+names(avg_ss_by_jobtype)[1]<-"Job_Type"
+
+avg_ss_by_salary <- aggregate(soft_summary[, ncol(soft_summary)], list(soft_summary$Queried_Salary), mean)
+names(avg_ss_by_salary)[1]<-"Queried_Salary"
+```
+
+#we create a dataframe containing only the total amount of softskills per job and the job type and the salary band
+```{r soft skill overview graph}
+
+soft_sum_3cols <- soft_summary %>% select(Job_Type,Queried_Salary,sum)
+
+avg_ss_by_jobtype$Job_Type <- factor(avg_ss_by_jobtype$Job_Type,levels = c("data_analyst", "data_scientist", "data_engineer"))
+
+#plot showing number soft skills on average per job type
+
+ggplot(avg_ss_by_jobtype) +
+ aes(x = Job_Type, weight = x) +
+ geom_bar(fill = "#2171b5") +
+ labs(x = "Job Type", y = "avg # of soft skills in job description", title = "Soft Skills Mentioned per Job Type") +
+ theme_minimal()
+
+#we agregate the dataframe into averages for every combination of salary and job type
+skillby_type_sal <-aggregate(x=soft_sum_3cols$sum, by = soft_sum_3cols[c("Job_Type", "Queried_Salary")],
+  FUN=mean, na.rm=TRUE)
+
+# make variable factors and order them
+
+skillby_type_sal$Queried_Salary <- factor(skillby_type_sal$Queried_Salary,levels = c("<80000", "80000-99999", "100000-119999", "120000-139999", "140000-159999", ">160000"))
+
+skillby_type_sal$Job_Type <- factor(skillby_type_sal$Job_Type,levels = c("data_analyst", "data_scientist", "data_engineer"))
+
+# heatmap of average skills mentioned by job type and salary
+
+ggplot(skillby_type_sal) +
+ aes(x = Queried_Salary, y = Job_Type, fill = x) +
+ geom_tile(size = 1L) +
+ scale_fill_distiller(palette = "PuBu") +
+ labs(x = "Salary Band", y = "Job Type", title = "Soft Skills Mentioned across Salary and Job Type") +
+ theme_minimal()
 
 
+#not used for now bar chart for average # soft skills mentioned by salary
+
+# avg_ss_by_salary$Queried_Salary <- factor(avg_ss_by_salary$Queried_Salary,levels = c("<80000", "80000-99999", "100000-119999", "120000-139999", "140000-159999", ">160000"))
+
+# ggplot(avg_ss_by_salary) +
+#  aes(x = Queried_Salary, weight = x) +
+#  geom_bar(fill = "#1f9e89") +
+#  labs(x = "Salary Band", y = "avg # of soft skills in job description", title = "Soft Skill Mentions per Salary Band") +
+#  theme_minimal()
+
+
+```
+#looking at the extreme case of high salary data engineer
+```{r engineer_highsalary}
+eng_highs <- filter(df, Job_Type == "data_engineer" & Queried_Salary == ">160000")
+number_eng_highs <- nrow(eng_highs)
+eng_highs_long <- eng_highs[,c(44:ncol(eng_highs))] %>%
+  gather(skill, flag) %>%
+  filter(flag == 1)
+
+eng_highs_count <-aggregate(x=eng_highs_long$flag, by = eng_highs_long[c("skill")],
+  FUN=sum, na.rm=TRUE)
+
+eng_highs_count$x <- round(eng_highs_count$x/number_eng_highs,4)
+
+eng_highs_count <- eng_highs_count[order(-eng_highs_count$x),] 
+rownames(eng_highs_count) <- NULL
+
+```
+#looking at the extreme case of low salary data analyst
+```{r analyst_lowsalary}
+anl_lows <- filter(df, Job_Type == "data_analyst" & Queried_Salary == "<80000")
+number_anl_lows <- nrow(anl_lows)
+
+anl_lows_long <- anl_lows[,c(44:ncol(eng_highs))] %>%
+  gather(skill, flag) %>%
+  filter(flag == 1)
+
+anl_lows_count <-aggregate(x=anl_lows_long$flag, by = anl_lows_long[c("skill")],
+  FUN=sum, na.rm=TRUE)
+
+anl_lows_count$x <- round(anl_lows_count$x/number_anl_lows,4)
+
+anl_lows_count <- anl_lows_count[order(-anl_lows_count$x),] 
+rownames(anl_lows_count) <- NULL
+
+```
+#looking at the extreme cases of high salary data engineer and low salary data analyst together
+```{r topskills-table}
+
+table_eng_highs <- eng_highs_count[1:22,]
+table_anl_lows <- anl_lows_count[1:22,]
+
+names(table_eng_highs)[2] <- "occurance"
+names(table_anl_lows)[2] <- "occurance"
+
+table_eng_highs %>%
+  kable("html",col.names = NA, align = 'clc', caption = 'Top Soft skills (engineers high salary)') %>%
+    kable_styling(full_width = F, position = "float_left")
+ 
+table_anl_lows %>%
+  kable("html", align = 'clc', caption = 'Top Soft skills (analyst low salary)') %>%
+    kable_styling(full_width = F, position = "right")
+print(table_eng_highs)
+```
 
 ### Hard Skills
 
