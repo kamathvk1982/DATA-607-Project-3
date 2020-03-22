@@ -581,12 +581,12 @@ while (i < length(SigSkills)) {
 
 ```
 
+### Create a connection Object to MySQL database.
+#### We will connect to the sampel database named "jMsCGxUGVV"  created on cloud MySql [https://remotemysql.com/]
+
 ```{r}
 #install.packages("RMySQL")
 library("RMySQL")
-
-# Create a connection Object to MySQL database.
-# We will connect to the sampel database named "jMsCGxUGVV"  created on cloud MySql [https://remotemysql.com/]
 
 mysqlconnection = dbConnect(MySQL(), user = 'indeed', password = 'Indeed@123', dbname = 'indeed',
    host = 'localhost')
