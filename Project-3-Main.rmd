@@ -654,7 +654,7 @@ while (i < length(SigSkills)) {
 
 ## Connection String to connect to the local host database:
 #mysqlconnection = dbConnect(MySQL(), user = 'indeed', password = 'Indeed@123', dbname = 'indeed',
-   host = 'localhost')
+#   host = 'localhost')
 
 ## Lists the tables currently in the database: 
 #dbListTables(mysqlconnection)
